@@ -61,17 +61,17 @@ This frontend application serves as the primary user interface for a cryptocurre
 
 <div align="center">
 
-| Category                | Technology              | Version | Purpose                      |
-| ----------------------- | ----------------------- | ------- | ---------------------------- |
-| 🎯 **Framework**        | Next.js                 | 14.x    | App Router with SSR/SSG      |
-| 🔐 **Authentication**   | NextAuth                | v4      | JWT-based session management |
-| 🗃️ **State Management** | Zustand                 | 4.x     | Atomic global state          |
-| 🔄 **Data Fetching**    | React Query             | 5.x     | Caching & invalidation       |
-| 🎨 **Styling**          | TailwindCSS + shadcn/ui | 3.x     | Modern UI components         |
-| ⚡ **Real-time**        | WebSocket API           | -       | Live data synchronization    |
-| 🔗 **Cross-tab**        | BroadcastChannel API    | -       | Multi-tab communication      |
-| 📝 **Language**         | TypeScript              | 5.x     | Type safety                  |
-| 📦 **Package Manager**  | pnpm                    | 8.x     | Fast, efficient              |
+| Category                | Technology              | Version | Purpose                       |
+| ----------------------- | ----------------------- | ------- | ----------------------------  |
+| 🎯 **Framework**        | Next.js                 | 14.x    | App Router with SSR/SSG       |
+| 🔐 **Authentication**   | NextAuth                | v4      | JWT-based session management  |
+| 🗃️ **State Management** | Zustand                 | 4.x     | Atomic global state           |
+| 🔄 **Data Fetching**    | React Query             | 5.x     | Caching & invalidation        |
+| 🎨 **Styling**          | TailwindCSS + shadcn/ui | 3.x     | Modern UI components          |
+| ⚡ **Real-time**        | WebSocket API           | -       | Live data synchronization     |
+| 🔗 **Cross-tab**        | BroadcastChannel API    | -       | Multi-tab communication       |
+| 📝 **Language**         | TypeScript              | 5.x     | Type safety                   |
+| 📦 **Package Manager**  | pnpm                    | 8.x     | Fast, efficient               |
 
 </div>
 
