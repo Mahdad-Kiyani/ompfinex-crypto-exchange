@@ -429,11 +429,3 @@ This solution ensures that when a user makes a purchase on their phone, their wa
 </div>
 
 ---
-
-<div align="center">
-
-**Built with ❤️ using Next.js, TypeScript, and modern web technologies**
-
-![Made with Love](https://img.shields.io/badge/Made_with-Love-red?style=for-the-badge&logo=heart)
-
-</div>
