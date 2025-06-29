@@ -1,4 +1,4 @@
-# 🚀 Cryptocurrency Exchange Frontend
+# 🚀 Ompfinex Crypto Exchange
 
 <div align="center">
 
