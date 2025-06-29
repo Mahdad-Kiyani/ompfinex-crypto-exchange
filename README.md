@@ -15,16 +15,6 @@
 ## 🎯 Project Introduction
 
 > **🚀 A cutting-edge cryptocurrency exchange frontend that redefines the trading experience through advanced real-time technologies, seamless cross-device synchronization, and enterprise-grade architecture. Built with Next.js 14, TypeScript, and modern web standards, this project demonstrates the pinnacle of frontend engineering in the fintech space.**
-
-**Key Highlights:**
-
-- ⚡ **Real-time Performance**: Sub-100ms latency across all devices
-- 🔄 **Cross-Device Sync**: Seamless experience on desktop, tablet, and mobile
-- 🖥️ **Multi-Tab Support**: Advanced state management across browser tabs
-- 🎨 **Modern UI/UX**: Beautiful interface powered by TailwindCSS and shadcn/ui
-- 🔒 **Enterprise Security**: JWT-based authentication with NextAuth v4
-- 📊 **Advanced Trading**: Comprehensive charts, order books, and analytics
-
 ---
 
 ## 📊 Project Architecture Overview
