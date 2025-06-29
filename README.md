@@ -1,5 +1,3 @@
-# OMPFinex Crypto Exchange
-
 # 🚀 Cryptocurrency Exchange Frontend
 
 <div align="center">
@@ -145,96 +143,6 @@ Keeping all user devices synchronized with a single account while maintaining da
 
 **Solution**: Advanced Socket.IO-based real-time communication with automatic reconnection, event buffering, and state synchronization.
 
-```typescript
-// WebSocket connection with automatic reconnection
-import { useEffect, useRef, useState } from "react";
-import { io, Socket } from "socket.io-client";
-
-const SOCKET_SERVER_URL =
-  process.env.NEXT_PUBLIC_SOCKET_URL || "https://your-socket-server.com";
-
-type ServerToClientEvents = {
-  "price-update": (data: any) => void;
-  "order-book-update": (data: any) => void;
-  // Add other events here
-};
-
-type ClientToServerEvents = {
-  subscribe: (channel: string) => void;
-  unsubscribe: (channel: string) => void;
-  // Add other events here
-};
-
-export const useSocketIO = () => {
-  const socketRef = useRef<Socket<
-    ServerToClientEvents,
-    ClientToServerEvents
-  > | null>(null);
-  const [connected, setConnected] = useState(false);
-
-  useEffect(() => {
-    // Initialize Socket.IO client
-    socketRef.current = io(SOCKET_SERVER_URL, {
-      transports: ["websocket"],
-      autoConnect: false,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      auth: {
-        // Example: send JWT token for auth
-        token: localStorage.getItem("authToken"),
-      },
-    });
-
-    const socket = socketRef.current;
-
-    // Connection event handlers
-    socket.on("connect", () => {
-      console.log("Socket.IO connected:", socket.id);
-      setConnected(true);
-
-      // Subscribe to necessary channels after connection
-      socket.emit("subscribe", "price-updates");
-      socket.emit("subscribe", "order-book");
-    });
-
-    socket.on("disconnect", (reason) => {
-      console.warn("Socket.IO disconnected:", reason);
-      setConnected(false);
-    });
-
-    socket.on("connect_error", (error) => {
-      console.error("Socket.IO connection error:", error);
-    });
-
-    // Example event listeners (can be exposed or handled here)
-    socket.on("price-update", (data) => {
-      // Handle real-time price update
-      console.log("Price update received:", data);
-    });
-
-    socket.on("order-book-update", (data) => {
-      // Handle order book update
-      console.log("Order book update received:", data);
-    });
-
-    // Connect socket
-    socket.connect();
-
-    return () => {
-      // Clean up on unmount
-      socket.disconnect();
-    };
-  }, []);
-
-  const sendMessage = (event: keyof ClientToServerEvents, payload?: any) => {
-    socketRef.current?.emit(event, payload);
-  };
-
-  return { socket: socketRef.current, connected, sendMessage };
-};
-```
-
 ### 2. Cross-Tab State Management
 
 Ensuring all browser tabs maintain synchronized state without conflicts or data inconsistencies.
@@ -263,6 +171,210 @@ const useBroadcastChannel = (channelName: string) => {
 };
 ```
 
+### 3. WebSocket and React Query Integration for Multi-Device Synchronization
+
+One of the most complex challenges was integrating WebSocket real-time updates with React Query to ensure seamless data synchronization across multiple devices for the same user account. When a user performs an action (like making a purchase) on one device, we needed to instantly update the wallet balance and show consistent toast notifications across all connected devices.
+
+**Challenge**: Coordinating real-time WebSocket messages with React Query's caching and invalidation system to maintain data consistency while providing immediate UI feedback.
+
+**Solution**: Implemented a sophisticated event-driven system that listens to WebSocket messages and intelligently triggers React Query refetches based on message types, ensuring all devices stay synchronized.
+
+```typescript
+// WebSocket and React Query integration hook
+import { useQueryClient } from "@tanstack/react-query";
+import { useSocketIO } from "./useSocketIO";
+import { toast } from "sonner";
+
+interface WebSocketMessage {
+  type:
+    | "wallet-update"
+    | "order-completed"
+    | "trade-executed"
+    | "balance-changed";
+  data: any;
+  userId: string;
+  timestamp: number;
+}
+
+export const useWebSocketQuerySync = () => {
+  const queryClient = useQueryClient();
+  const { socket, connected } = useSocketIO();
+
+  useEffect(() => {
+    if (!socket || !connected) return;
+
+    const handleWebSocketMessage = (message: WebSocketMessage) => {
+      const { type, data, userId } = message;
+
+      // Invalidate and refetch queries based on message type
+      switch (type) {
+        case "wallet-update":
+          // Invalidate wallet-related queries
+          queryClient.invalidateQueries({
+            queryKey: ["wallet", userId],
+            exact: false,
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["balance", userId],
+            exact: false,
+          });
+
+          // Show consistent toast across all devices
+          toast.success(`Wallet updated: ${data.currency} ${data.amount}`, {
+            id: `wallet-update-${data.transactionId}`, // Prevent duplicate toasts
+            duration: 4000,
+          });
+          break;
+
+        case "order-completed":
+          // Invalidate order and portfolio queries
+          queryClient.invalidateQueries({
+            queryKey: ["orders", userId],
+            exact: false,
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["portfolio", userId],
+            exact: false,
+          });
+
+          toast.success(
+            `Order completed: ${data.symbol} ${data.side} ${data.quantity}`,
+            {
+              id: `order-${data.orderId}`,
+              duration: 5000,
+            }
+          );
+          break;
+
+        case "trade-executed":
+          // Invalidate trading history and portfolio
+          queryClient.invalidateQueries({
+            queryKey: ["trades", userId],
+            exact: false,
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["portfolio", userId],
+            exact: false,
+          });
+
+          toast.success(`Trade executed: ${data.symbol} at ${data.price}`, {
+            id: `trade-${data.tradeId}`,
+            duration: 4000,
+          });
+          break;
+
+        case "balance-changed":
+          // Invalidate all balance-related queries
+          queryClient.invalidateQueries({
+            queryKey: ["balance"],
+            exact: false,
+          });
+          queryClient.invalidateQueries({
+            queryKey: ["wallet"],
+            exact: false,
+          });
+
+          toast.info(`Balance updated: ${data.currency} ${data.newBalance}`, {
+            id: `balance-${data.currency}-${data.timestamp}`,
+            duration: 3000,
+          });
+          break;
+      }
+    };
+
+    // Listen for real-time updates
+    socket.on("user-action", handleWebSocketMessage);
+
+    return () => {
+      socket.off("user-action", handleWebSocketMessage);
+    };
+  }, [socket, connected, queryClient]);
+
+  return { connected };
+};
+
+// Enhanced WebSocket hook with React Query integration
+export const useEnhancedSocketIO = () => {
+  const { socket, connected, sendMessage } = useSocketIO();
+  const queryClient = useQueryClient();
+
+  // Optimistic updates for better UX
+  const performOptimisticUpdate = (
+    queryKey: string[],
+    updater: (oldData: any) => any
+  ) => {
+    queryClient.setQueryData(queryKey, updater);
+  };
+
+  // Send action and handle optimistic updates
+  const sendActionWithOptimisticUpdate = (
+    action: string,
+    payload: any,
+    optimisticQueryKey: string[],
+    optimisticUpdater: (oldData: any) => any
+  ) => {
+    // Apply optimistic update immediately
+    performOptimisticUpdate(optimisticQueryKey, optimisticUpdater);
+
+    // Send action to server
+    sendMessage(action, payload);
+  };
+
+  return {
+    socket,
+    connected,
+    sendMessage,
+    sendActionWithOptimisticUpdate,
+    performOptimisticUpdate,
+  };
+};
+
+// Usage example in a trading component
+export const useTradingActions = () => {
+  const { sendActionWithOptimisticUpdate } = useEnhancedSocketIO();
+  const queryClient = useQueryClient();
+
+  const executeTrade = (tradeData: {
+    symbol: string;
+    side: "buy" | "sell";
+    quantity: number;
+    price: number;
+  }) => {
+    const { symbol, side, quantity, price } = tradeData;
+
+    // Optimistic update for immediate UI feedback
+    sendActionWithOptimisticUpdate(
+      "execute-trade",
+      tradeData,
+      ["portfolio", "current"], // Query key to update
+      (oldPortfolio) => ({
+        ...oldPortfolio,
+        [symbol]: {
+          ...oldPortfolio[symbol],
+          quantity:
+            side === "buy"
+              ? (oldPortfolio[symbol]?.quantity || 0) + quantity
+              : (oldPortfolio[symbol]?.quantity || 0) - quantity,
+        },
+      })
+    );
+  };
+
+  return { executeTrade };
+};
+```
+
+**Key Benefits of This Integration:**
+
+- ⚡ **Instant UI Feedback**: Optimistic updates provide immediate visual feedback
+- 🔄 **Automatic Synchronization**: All devices receive real-time updates via WebSocket
+- 🎯 **Smart Cache Invalidation**: React Query intelligently refetches only relevant data
+- 🔔 **Consistent Notifications**: Toast messages appear simultaneously across all devices
+- 📱 **Multi-Device Consistency**: Wallet balances and portfolio data stay synchronized
+- 🚀 **Performance Optimized**: Minimal API calls with intelligent caching strategies
+
+This solution ensures that when a user makes a purchase on their phone, their wallet balance updates instantly on their desktop, tablet, and any other connected devices, with consistent toast notifications appearing across all platforms simultaneously.
+
 ## 📁 Project Folder Structure
 
 ```
@@ -290,6 +402,20 @@ const useBroadcastChannel = (channelName: string) => {
 ├── 📄 tsconfig.json             # TypeScript configuration
 └── 📄 README.md                 # This file
 ```
+
+## 📸 Screenshots
+
+<div align="center">
+
+| Feature                    | Screenshot                                 | Description                              |
+| -------------------------- | ------------------------------------------ | ---------------------------------------- |
+| **🎯 Trading Interface**   | ![Trading Interface](./assets/trading.png) | Advanced trading with real-time charts   |
+| **📊 Order Book**          | ![Order Book](./assets/orderbook.png)      | Live order book with depth visualization |
+| **💼 Portfolio Dashboard** | ![Portfolio](./assets/portfolio.png)       | Comprehensive portfolio management       |
+| **🔐 Authentication**      | ![Auth](./assets/auth.png)                 | Secure login and registration            |
+| **📱 Mobile Responsive**   | ![Mobile](./assets/mobile.png)             | Optimized mobile experience              |
+
+</div>
 
 ## 📈 Engineering Improvements
 
@@ -335,4 +461,3 @@ const useBroadcastChannel = (channelName: string) => {
 ![Made with Love](https://img.shields.io/badge/Made_with-Love-red?style=for-the-badge&logo=heart)
 
 </div>
-
