@@ -291,20 +291,6 @@ const useBroadcastChannel = (channelName: string) => {
 └── 📄 README.md                 # This file
 ```
 
-## 📸 Screenshots
-
-<div align="center">
-
-| Feature                    | Screenshot                                 | Description                              |
-| -------------------------- | ------------------------------------------ | ---------------------------------------- |
-| **🎯 Trading Interface**   | ![Trading Interface](./assets/trading.png) | Advanced trading with real-time charts   |
-| **📊 Order Book**          | ![Order Book](./assets/orderbook.png)      | Live order book with depth visualization |
-| **💼 Portfolio Dashboard** | ![Portfolio](./assets/portfolio.png)       | Comprehensive portfolio management       |
-| **🔐 Authentication**      | ![Auth](./assets/auth.png)                 | Secure login and registration            |
-| **📱 Mobile Responsive**   | ![Mobile](./assets/mobile.png)             | Optimized mobile experience              |
-
-</div>
-
 ## 📈 Engineering Improvements
 
 <div align="center">
